@@ -6,7 +6,7 @@ import torch
 import csv
 import util
 from transformers import DistilBertTokenizerFast, AutoTokenizer
-from transformers import DistilBertForQuestionAnswering, AutoTokenizerForQuestionAnswering
+from transformers import DistilBertForQuestionAnswering, AutoModelForQuestionAnswering
 from transformers import AdamW
 from tensorboardX import SummaryWriter
 
