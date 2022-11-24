@@ -5,8 +5,8 @@ from collections import OrderedDict
 import torch
 import csv
 import util
-from transformers import DistilBertTokenizerFast
-from transformers import DistilBertForQuestionAnswering
+from transformers import DistilBertTokenizerFast, AutoTokenizer
+from transformers import DistilBertForQuestionAnswering, AutoTokenizerForQuestionAnswering
 from transformers import AdamW
 from tensorboardX import SummaryWriter
 
