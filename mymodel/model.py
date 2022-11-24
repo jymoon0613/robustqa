@@ -2,6 +2,7 @@ from typing import Optional, Union ,Tuple
 
 import torch
 import torch.nn as nn
+from torch.nn import CrossEntropyLoss
 
 from transformers import BertModel
 from transformers.modeling_outputs import QuestionAnsweringModelOutput
