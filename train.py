@@ -48,8 +48,6 @@ def prepare_eval_data(dataset_dict, tokenizer):
 
     return tokenized_examples
 
-
-
 def prepare_train_data(dataset_dict, tokenizer):
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
