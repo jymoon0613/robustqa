@@ -6,7 +6,7 @@ import torch
 import csv
 import util
 from transformers import DistilBertTokenizerFast, AutoTokenizer
-from transformers import DistilBertForQuestionAnswering, AutoTokenizerForQuestionAnswering
+from transformers import DistilBertForQuestionAnswering, AutoModelForQuestionAnswering
 from transformers import AdamW
 from tensorboardX import SummaryWriter
 
@@ -254,7 +254,7 @@ def main():
     args = get_train_test_args()
 
     util.set_seed(args.seed)
-    model = DistilBertForQuestionAnswering.from_pretrained("distilbert-base-uncased")
+    model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
     if args.do_train:
