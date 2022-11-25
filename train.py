@@ -274,7 +274,7 @@ class Trainer():
                                         end_positions=end_positions,
                                         output_hidden_states=True)
 
-                    loss = outputs[0]
+                    loss = outputs[0] * 0.5
 
                     latent = outputs[3][-1]
                     latent = latent[:, 1:, :].mean(dim=1)
@@ -286,7 +286,7 @@ class Trainer():
                     im_loss = entropy_loss * 1.0
                     loss += im_loss
 
-                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s))*0.3
+                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s)) * 0.3
 
                     loss.backward()
                     optim.step()
