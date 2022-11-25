@@ -10,9 +10,9 @@ from transformers import DistilBertForQuestionAnswering, AutoModelForQuestionAns
 from transformers import AdamW
 from tensorboardX import SummaryWriter
 
-
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
+
 from args import get_train_test_args
 
 from tqdm import tqdm
@@ -254,7 +254,7 @@ def main():
     args = get_train_test_args()
 
     util.set_seed(args.seed)
-    model = DistilBertForQuestionAnswering.from_pretrained("distilbert-base-uncased")
+    model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
     if args.do_train:
