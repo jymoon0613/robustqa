@@ -3,6 +3,7 @@ import json
 import os
 from collections import OrderedDict
 import torch
+import torch.nn as nn
 import csv
 import util
 from transformers import DistilBertTokenizerFast, AutoTokenizer
@@ -13,6 +14,7 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
 
+from mymodel.model import MyModel, Entropy
 from args import get_train_test_args
 
 from tqdm import tqdm
@@ -210,8 +212,69 @@ class Trainer():
                     end_positions = batch['end_positions'].to(device)
                     outputs = model(input_ids, attention_mask=attention_mask,
                                     start_positions=start_positions,
-                                    end_positions=end_positions)
+                                    end_positions=end_positions,
+                                    )
                     loss = outputs[0]
+                    loss.backward()
+                    optim.step()
+                    progress_bar.update(len(input_ids))
+                    progress_bar.set_postfix(epoch=epoch_num, NLL=loss.item())
+                    tbx.add_scalar('train/NLL', loss.item(), global_idx)
+                    if (global_idx % self.eval_every) == 0:
+                        self.log.info(f'Evaluating at step {global_idx}...')
+                        preds, curr_score = self.evaluate(model, eval_dataloader, val_dict, return_preds=True)
+                        results_str = ', '.join(f'{k}: {v:05.2f}' for k, v in curr_score.items())
+                        self.log.info('Visualizing in TensorBoard...')
+                        for k, v in curr_score.items():
+                            tbx.add_scalar(f'val/{k}', v, global_idx)
+                        self.log.info(f'Eval {results_str}')
+                        if self.visualize_predictions:
+                            util.visualize(tbx,
+                                           pred_dict=preds,
+                                           gold_dict=val_dict,
+                                           step=global_idx,
+                                           split='val',
+                                           num_visuals=self.num_visuals)
+                        if curr_score['F1'] >= best_scores['F1']:
+                            best_scores = curr_score
+                            self.save(model)
+                    global_idx += 1
+        return best_scores
+
+    def train_target(self, model, train_dataloader, eval_dataloader, val_dict):
+        device = self.device
+        model.to(device)
+        optim = AdamW(model.parameters(), lr=self.lr)
+        global_idx = 0
+        best_scores = {'F1': -1.0, 'EM': -1.0}
+        tbx = SummaryWriter(self.save_dir)
+
+        for epoch_num in range(self.num_epochs):
+            self.log.info(f'Epoch: {epoch_num}')
+            with torch.enable_grad(), tqdm(total=len(train_dataloader.dataset)) as progress_bar:
+                for batch in train_dataloader:
+                    optim.zero_grad()
+
+                    model.bert.train()
+                    model.qa_outputs.eval()
+
+                    input_ids = batch['input_ids'].to(device)
+                    attention_mask = batch['attention_mask'].to(device)
+                    start_positions = batch['start_positions'].to(device)
+                    end_positions = batch['end_positions'].to(device)
+                    outputs = model(input_ids, attention_mask=attention_mask,
+                                    start_positions=start_positions,
+                                    end_positions=end_positions,
+                                    output_hidden_states=True)
+                    loss = outputs[0]
+
+                    latent = outputs[3][-1]
+                    latent = latent[:, 1:, :].mean(dim=1)
+                    softmax_out = nn.Softmax(dim=1)(latent)
+                    entropy_loss = torch.mean(Entropy(softmax_out))
+                    im_loss = entropy_loss * 1.0
+                    loss += im_loss
+
                     loss.backward()
                     optim.step()
                     progress_bar.update(len(input_ids))
@@ -254,8 +317,8 @@ def main():
     args = get_train_test_args()
 
     util.set_seed(args.seed)
-    model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
-    tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+    model = MyModel.from_pretrained("deepset/tinybert-6l-768d-squad2")
+    tokenizer = AutoTokenizer.from_pretrained("deepset/tinybert-6l-768d-squad2")
 
     if args.do_train:
         if not os.path.exists(args.save_dir):
@@ -263,19 +326,48 @@ def main():
         args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
         log = util.get_logger(args.save_dir, 'log_train')
         log.info(f'Args: {json.dumps(vars(args), indent=4, sort_keys=True)}')
-        log.info("Preparing Training Data...")
+        
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train')
+
+        log.info("Preparing Training Data...")
+        source_train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train')
+        target_train_dataset, _ = get_dataset(args, 'race,relation_extraction,duorc', 'datasets/oodomain_train', tokenizer, 'train')
+
         log.info("Preparing Validation Data...")
-        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
-        train_loader = DataLoader(train_dataset,
+        source_val_dataset, source_val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
+        target_val_dataset, target_val_dict = get_dataset(args, 'race,relation_extraction,duorc', 'datasets/oodomain_val', tokenizer, 'val')
+
+        source_train_loader = DataLoader(source_train_dataset,
                                 batch_size=args.batch_size,
-                                sampler=RandomSampler(train_dataset))
-        val_loader = DataLoader(val_dataset,
+                                sampler=RandomSampler(source_train_dataset))
+        target_train_loader = DataLoader(target_train_dataset,
                                 batch_size=args.batch_size,
-                                sampler=SequentialSampler(val_dataset))
-        best_scores = trainer.train(model, train_loader, val_loader, val_dict)
+                                sampler=RandomSampler(target_train_dataset))
+                                
+        source_val_loader = DataLoader(source_val_dataset,
+                                batch_size=args.batch_size,
+                                sampler=SequentialSampler(source_val_dataset))
+        target_val_loader = DataLoader(target_val_dataset,
+                                batch_size=args.batch_size,
+                                sampler=SequentialSampler(target_val_dataset))
+
+        best_scores = trainer.train(model, source_train_loader, source_val_loader, source_val_dict)
+
+        print(best_scores)
+
+        args.eval_every = 200
+
+        trainer = Trainer(args, log)
+
+        checkpoint_path = os.path.join(args.save_dir, 'checkpoint')
+        model = MyModel.from_pretrained(checkpoint_path)
+
+        for p in model.qa_outputs.parameters():
+            p.requires_grad = False
+
+        best_scores = trainer.train_target(model, target_train_loader, target_val_loader, target_val_dict)
+
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         split_name = 'test' if 'test' in args.eval_dir else 'validation'
