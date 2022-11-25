@@ -241,10 +241,11 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-    def train_target(self, model, train_dataloader, eval_dataloader, val_dict):
+    def train_target(self, model_t, model_s, train_dataloader, eval_dataloader, val_dict):
         device = self.device
-        model.to(device)
-        optim = AdamW(model.parameters(), lr=self.lr)
+        model_t.to(device)
+        model_s.to(device)
+        optim = AdamW(model_t.parameters(), lr=self.lr)
         global_idx = 0
         best_scores = {'F1': -1.0, 'EM': -1.0}
         tbx = SummaryWriter(self.save_dir)
@@ -255,50 +256,62 @@ class Trainer():
                 for batch in train_dataloader:
                     optim.zero_grad()
 
-                    model.bert.train()
-                    model.qa_outputs.eval()
+                    model_t.bert.train()
+                    model_t.qa_outputs.eval()
+                    model_s.eval()
 
                     input_ids = batch['input_ids'].to(device)
                     attention_mask = batch['attention_mask'].to(device)
                     start_positions = batch['start_positions'].to(device)
                     end_positions = batch['end_positions'].to(device)
-                    outputs = model(input_ids, attention_mask=attention_mask,
+                    outputs = model_t(input_ids, attention_mask=attention_mask,
                                     start_positions=start_positions,
                                     end_positions=end_positions,
                                     output_hidden_states=True)
-                    loss = outputs[0]
+                    with torch.no_grad():
+                        outputs_s = model_s(input_ids, attention_mask=attention_mask,
+                                        start_positions=start_positions,
+                                        end_positions=end_positions,
+                                        output_hidden_states=True)
+
+                    #loss = outputs[0]
 
                     latent = outputs[3][-1]
                     latent = latent[:, 1:, :].mean(dim=1)
+
+                    latent_s = outputs_s[3][-1][:, 1:, :].mean(dim=1)
+
                     softmax_out = nn.Softmax(dim=1)(latent)
                     entropy_loss = torch.mean(Entropy(softmax_out))
                     im_loss = entropy_loss * 1.0
-                    loss += im_loss
+                    loss = im_loss
+
+                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s))*0.3
 
                     loss.backward()
                     optim.step()
                     progress_bar.update(len(input_ids))
                     progress_bar.set_postfix(epoch=epoch_num, NLL=loss.item())
                     tbx.add_scalar('train/NLL', loss.item(), global_idx)
-                    if (global_idx % self.eval_every) == 0:
-                        self.log.info(f'Evaluating at step {global_idx}...')
-                        preds, curr_score = self.evaluate(model, eval_dataloader, val_dict, return_preds=True)
-                        results_str = ', '.join(f'{k}: {v:05.2f}' for k, v in curr_score.items())
-                        self.log.info('Visualizing in TensorBoard...')
-                        for k, v in curr_score.items():
-                            tbx.add_scalar(f'val/{k}', v, global_idx)
-                        self.log.info(f'Eval {results_str}')
-                        if self.visualize_predictions:
-                            util.visualize(tbx,
-                                           pred_dict=preds,
-                                           gold_dict=val_dict,
-                                           step=global_idx,
-                                           split='val',
-                                           num_visuals=self.num_visuals)
-                        if curr_score['F1'] >= best_scores['F1']:
-                            best_scores = curr_score
-                            self.save(model)
                     global_idx += 1
+                self.log.info(f'Evaluating at step {global_idx}...')
+                preds, curr_score = self.evaluate(model_t, eval_dataloader, val_dict, return_preds=True)
+                results_str = ', '.join(f'{k}: {v:05.2f}' for k, v in curr_score.items())
+                self.log.info('Visualizing in TensorBoard...')
+                for k, v in curr_score.items():
+                    tbx.add_scalar(f'val/{k}', v, global_idx)
+                self.log.info(f'Eval {results_str}')
+                if self.visualize_predictions:
+                    util.visualize(tbx,
+                                    pred_dict=preds,
+                                    gold_dict=val_dict,
+                                    step=global_idx,
+                                    split='val',
+                                    num_visuals=self.num_visuals)
+                if curr_score['F1'] >= best_scores['F1']:
+                    best_scores = curr_score
+                    self.save(model_t)
+                    
         return best_scores
 
 def get_dataset(args, datasets, data_dir, tokenizer, split_name):
@@ -352,21 +365,27 @@ def main():
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(target_val_dataset))
 
-        best_scores = trainer.train(model, source_train_loader, source_val_loader, source_val_dict)
+        #best_scores = trainer.train(model, source_train_loader, source_val_loader, source_val_dict)
 
-        print(best_scores)
+        #print(best_scores)
 
-        args.eval_every = 200
+        args.num_epochs = 10
 
         trainer = Trainer(args, log)
 
-        checkpoint_path = os.path.join(args.save_dir, 'checkpoint')
-        model = MyModel.from_pretrained(checkpoint_path)
+        checkpoint_path = os.path.join('save/baseline-01', 'checkpoint')
+        model_t = MyModel.from_pretrained(checkpoint_path)
+        model_s = MyModel.from_pretrained(checkpoint_path)
 
-        for p in model.qa_outputs.parameters():
+        for p in model_t.qa_outputs.parameters():
             p.requires_grad = False
 
-        best_scores = trainer.train_target(model, target_train_loader, target_val_loader, target_val_dict)
+        for p in model_s.parameters():
+            p.requires_grad = False
+
+        best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict)
+
+        print(best_scores)
 
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
