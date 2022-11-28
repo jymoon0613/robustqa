@@ -145,6 +145,8 @@ class Trainer():
         self.save_dir = args.save_dir
         self.log = log
         self.visualize_predictions = args.visualize_predictions
+        self.alpha = args.alpha
+        self.beta = args.beta
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
@@ -283,10 +285,10 @@ class Trainer():
 
                     softmax_out = nn.Softmax(dim=1)(latent)
                     entropy_loss = torch.mean(Entropy(softmax_out))
-                    im_loss = entropy_loss * args.alpha
+                    im_loss = entropy_loss * self.alpha
                     loss += im_loss
 
-                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s)) * args.beta
+                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s)) * self.beta
 
                     loss.backward()
                     optim.step()
@@ -376,7 +378,7 @@ def main():
             for b in beta :
                 args.alpha = a
                 args.beta = b
-
+                args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
                 args.num_epochs = 50
 
                 trainer = Trainer(args, log)
@@ -393,7 +395,7 @@ def main():
 
                 best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict)
 
-                print('Alpha:{}, Beta:{} , Score:{}'.format(a, b, best_scores))
+                print('Alpha:{}, Beta:{}, Score:{}'.format(a, b, best_scores))
 
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
