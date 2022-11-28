@@ -376,7 +376,7 @@ def main():
             for b in betas :
                 alpha = a
                 beta = b
-                args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
+                args.save_dir = util.get_save_dir('save/baseline-01', '{}and{}'.format(alpha,beta))
                 args.num_epochs = 50
 
                 trainer = Trainer(args, log)
