@@ -145,8 +145,6 @@ class Trainer():
         self.save_dir = args.save_dir
         self.log = log
         self.visualize_predictions = args.visualize_predictions
-        self.alpha = args.alpha
-        self.beta = args.beta
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
@@ -243,7 +241,7 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-    def train_target(self, model_t, model_s, train_dataloader, eval_dataloader, val_dict):
+    def train_target(self, model_t, model_s, train_dataloader, eval_dataloader, val_dict, alpha, beta):
         device = self.device
         model_t.to(device)
         model_s.to(device)
@@ -285,10 +283,10 @@ class Trainer():
 
                     softmax_out = nn.Softmax(dim=1)(latent)
                     entropy_loss = torch.mean(Entropy(softmax_out))
-                    im_loss = entropy_loss * self.alpha
+                    im_loss = entropy_loss * alpha
                     loss += im_loss
 
-                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s)) * self.beta
+                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s)) * beta
 
                     loss.backward()
                     optim.step()
@@ -371,13 +369,13 @@ def main():
 
         # print(best_scores)
 
-        alpha = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        beta = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        alphas = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        betas = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
-        for a in alpha :
-            for b in beta :
-                args.alpha = a
-                args.beta = b
+        for a in alphas :
+            for b in betas :
+                alpha = a
+                beta = b
                 args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
                 args.num_epochs = 50
 
@@ -393,9 +391,9 @@ def main():
                 for p in model_s.parameters():
                     p.requires_grad = False
 
-                best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict)
+                best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict, alpha, beta)
 
-                print('Alpha:{}, Beta:{}, Score:{}'.format(a, b, best_scores))
+                print('Alpha:{}, Beta:{}, Score:{}'.format(alpha, beta, best_scores))
 
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
