@@ -274,7 +274,7 @@ class Trainer():
                                         end_positions=end_positions,
                                         output_hidden_states=True)
 
-                    loss = outputs[0] * 0.5
+                    loss = outputs[0]
 
                     latent = outputs[3][-1]
                     latent = latent[:, 1:, :].mean(dim=1)
@@ -283,10 +283,10 @@ class Trainer():
 
                     softmax_out = nn.Softmax(dim=1)(latent)
                     entropy_loss = torch.mean(Entropy(softmax_out))
-                    im_loss = entropy_loss * 1.0
+                    im_loss = entropy_loss * args.alpha
                     loss += im_loss
 
-                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s)) * 0.3
+                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s)) * args.beta
 
                     loss.backward()
                     optim.step()
@@ -369,23 +369,31 @@ def main():
 
         # print(best_scores)
 
-        args.num_epochs = 10
+        alpha = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        beta = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
-        trainer = Trainer(args, log)
+        for a in alpha :
+            for b in beta :
+                args.alpha = a
+                args.beta = b
 
-        checkpoint_path = os.path.join('save/baseline-01', 'checkpoint')
-        model_t = MyModel.from_pretrained(checkpoint_path)
-        model_s = MyModel.from_pretrained(checkpoint_path)
+                args.num_epochs = 50
 
-        for p in model_t.qa_outputs.parameters():
-            p.requires_grad = False
+                trainer = Trainer(args, log)
 
-        for p in model_s.parameters():
-            p.requires_grad = False
+                checkpoint_path = os.path.join('save/03.final/tinybert-ind-50/baseline-01', 'checkpoint')
+                model_t = MyModel.from_pretrained(checkpoint_path)
+                model_s = MyModel.from_pretrained(checkpoint_path)
 
-        best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict)
+                for p in model_t.qa_outputs.parameters():
+                    p.requires_grad = False
 
-        print(best_scores)
+                for p in model_s.parameters():
+                    p.requires_grad = False
+
+                best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict)
+
+                print('Alpha:{}, Beta:{} , Score:{}'.format(a, b, best_scores))
 
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
