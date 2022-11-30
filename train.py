@@ -274,6 +274,12 @@ class Trainer():
                                         end_positions=end_positions,
                                         output_hidden_states=True)
 
+                    print('start_y', start_positions)
+                    print('end_y', end_positions)
+
+                    print('start_logits', outputs[1])
+                    print('end_logits', outputs[2])
+
                     loss = outputs[0]
 
                     latent = outputs[3][-1]
