@@ -274,25 +274,18 @@ class Trainer():
                                         end_positions=end_positions,
                                         output_hidden_states=True)
 
-                    print('start_y', start_positions)
-                    print('end_y', end_positions)
-
-                    print('start_logits', outputs[1])
-                    print('end_logits', outputs[2])
-
                     loss = outputs[0]
 
-                    latent = outputs[3][-1]
-                    latent = latent[:, 1:, :].mean(dim=1)
+                    start_loss = nn.CrossEntropyLoss()(outputs[1], outputs_s[1])
+                    end_loss = nn.CrossEntropyLoss()(outputs[2], outputs_s[2])
 
-                    latent_s = outputs_s[3][-1][:, 1:, :].mean(dim=1)
+                    loss += alpha * (start_loss + end_loss) / 2
 
-                    softmax_out = nn.Softmax(dim=1)(latent)
-                    entropy_loss = torch.mean(Entropy(softmax_out))
-                    im_loss = entropy_loss * alpha
+                    softmax_out_start = nn.Softmax(dim=1)(outputs[1])
+                    softmax_out_end = nn.Softmax(dim=1)(outputs[2])
+                    entropy_loss = (torch.mean(Entropy(softmax_out_start)) + torch.mean(Entropy(softmax_out_end))) / 2
+                    im_loss = entropy_loss * beta
                     loss += im_loss
-
-                    loss += nn.CrossEntropyLoss()(nn.Softmax(dim=1)(latent), nn.Softmax(dim=1)(latent_s)) * beta
 
                     loss.backward()
                     optim.step()
@@ -300,6 +293,7 @@ class Trainer():
                     progress_bar.set_postfix(epoch=epoch_num, NLL=loss.item())
                     tbx.add_scalar('train/NLL', loss.item(), global_idx)
                     global_idx += 1
+
                 self.log.info(f'Evaluating at step {global_idx}...')
                 preds, curr_score = self.evaluate(model_t, eval_dataloader, val_dict, return_preds=True)
                 results_str = ', '.join(f'{k}: {v:05.2f}' for k, v in curr_score.items())
@@ -375,11 +369,11 @@ def main():
 
         # print(best_scores)
 
-        alphas = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        betas = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        alphas = [i for i in range(0.0, 1.0, 0.1)]
+        betas = [i for i in range(0.0, 1.0, 0.1)]
 
-        for a in alphas :
-            for b in betas :
+        for a in alphas:
+            for b in betas:
                 alpha = a
                 beta = b
                 args.save_dir = util.get_save_dir('save/baseline-01', '{}and{}'.format(alpha,beta))
