@@ -369,11 +369,8 @@ def main():
 
         # print(best_scores)
 
-        alphas = [i for i in range(0.0, 1.1, 0.1)]
-        betas = [i for i in range(0.0, 1.1, 0.1)]
-
-        print(alphas)
-        print(betas)
+        alphas = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        betas = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
         for a in alphas:
             for b in betas:
