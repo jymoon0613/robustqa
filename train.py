@@ -277,10 +277,13 @@ class Trainer():
 
                     loss = outputs.loss
 
-                    start_loss = nn.CrossEntropyLoss()(outputs.start_logits, outputs_s.start_logits)
-                    end_loss = nn.CrossEntropyLoss()(outputs.end_logits, outputs_s.end_logits)
+                    latent = outputs.hidden_states[3][-1][:,1:,:].mean(dim=1)
+                    latent_s = outputs_s[3][-1][:,1:,:].mean(dim=1)
 
-                    loss += alpha * (start_loss + end_loss) / 2
+                    latent = nn.Softmax(dim=1)(latent)
+                    latent_s = nn.Softmax(dim=1)(latent_s)
+
+                    loss += alpha * nn.CrossEntropyLoss()(latent, latent_s)
 
                     softmax_out_start = nn.Softmax(dim=1)(outputs.start_logits)
                     softmax_out_end = nn.Softmax(dim=1)(outputs.end_logits)
