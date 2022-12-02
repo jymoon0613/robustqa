@@ -278,7 +278,7 @@ class Trainer():
                     loss = outputs.loss
 
                     latent = outputs.hidden_states[-1][:,1:,:].mean(dim=1)
-                    latent_s = outputs_s[-1][:,1:,:].mean(dim=1)
+                    latent_s = outputs_s.hidden_states[-1][:,1:,:].mean(dim=1)
 
                     latent = nn.Softmax(dim=1)(latent)
                     latent_s = nn.Softmax(dim=1)(latent_s)
