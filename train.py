@@ -14,7 +14,7 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
 
-from mymodel.model import MyModel, Entropy
+from mymodel.model import MyModel, Entropy, SoftTarget, SimilarityLoss
 from args import get_train_test_args
 
 from tqdm import tqdm
@@ -241,7 +241,7 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-    def train_target(self, model_t, model_s, train_dataloader, eval_dataloader, train_dict, val_dict, alpha, beta):
+    def train_target(self, model_t, model_s, train_dataloader, eval_dataloader, val_dict, alpha, beta):
         device = self.device
         model_t.to(device)
         model_s.to(device)
@@ -279,17 +279,13 @@ class Trainer():
 
                     latent = outputs.hidden_states[-1][:,1:,:].mean(dim=1)
                     latent_s = outputs_s.hidden_states[-1][:,1:,:].mean(dim=1)
-
-                    latent = nn.Softmax(dim=1)(latent)
-                    latent_s = nn.Softmax(dim=1)(latent_s)
-
-                    loss += alpha * nn.CrossEntropyLoss()(latent, latent_s)
+                    sim_loss = torch.mean(SimilarityLoss()(latent, latent_s))
+                    loss += alpha * sim_loss
 
                     softmax_out_start = nn.Softmax(dim=1)(outputs.start_logits)
                     softmax_out_end = nn.Softmax(dim=1)(outputs.end_logits)
                     entropy_loss = (torch.mean(Entropy(softmax_out_start)) + torch.mean(Entropy(softmax_out_end))) / 2
-                    im_loss = entropy_loss * beta
-                    loss += im_loss
+                    loss += beta * entropy_loss
 
                     loss.backward()
                     optim.step()
@@ -349,7 +345,7 @@ def main():
 
         log.info("Preparing Training Data...")
         source_train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train')
-        target_train_dataset, tartget_train_dict = get_dataset(args, 'race,relation_extraction,duorc', 'datasets/oodomain_train', tokenizer, 'train')
+        target_train_dataset, _ = get_dataset(args, 'race,relation_extraction,duorc', 'datasets/oodomain_train', tokenizer, 'train')
 
         log.info("Preparing Validation Data...")
         source_val_dataset, source_val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
@@ -395,7 +391,7 @@ def main():
                 for p in model_s.parameters():
                     p.requires_grad = False
 
-                best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, tartget_train_dict, target_val_dict, alpha, beta)
+                best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict, alpha, beta)
 
                 print('Alpha:{}, Beta:{}, Score:{}'.format(alpha, beta, best_scores))
 
