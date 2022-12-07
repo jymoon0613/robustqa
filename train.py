@@ -371,16 +371,13 @@ def main():
 
         alpha = 0.4
         beta = 0.3
-
-        args.lr = 3e-07
         
-        args.save_dir = util.get_save_dir('save/baseline-01', '{}and{}'.format(alpha,beta))
+        args.save_dir = util.get_save_dir('save/baseline-01', '{}/baseline-01'.format('onlyent'))
         args.num_epochs = 50
 
         trainer = Trainer(args, log)
 
-        #checkpoint_path = os.path.join('save/03.final/tinybert-ind-50/baseline-01', 'checkpoint')
-        checkpoint_path = os.path.join('save/new/0.4and0.3-01', 'checkpoint')
+        checkpoint_path = os.path.join('save/00.aa/01.SourceOnly/TinyBERT/baseline-01', 'checkpoint')
         model_t = MyModel.from_pretrained(checkpoint_path)
         model_s = MyModel.from_pretrained(checkpoint_path)
 
