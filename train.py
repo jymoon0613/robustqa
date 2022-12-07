@@ -344,23 +344,23 @@ def main():
         trainer = Trainer(args, log)
 
         log.info("Preparing Training Data...")
-        source_train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train')
+        # source_train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train')
         target_train_dataset, _ = get_dataset(args, 'race,relation_extraction,duorc', 'datasets/oodomain_train', tokenizer, 'train')
 
         log.info("Preparing Validation Data...")
-        source_val_dataset, source_val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
+        # source_val_dataset, source_val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         target_val_dataset, target_val_dict = get_dataset(args, 'race,relation_extraction,duorc', 'datasets/oodomain_val', tokenizer, 'val')
 
-        source_train_loader = DataLoader(source_train_dataset,
-                                batch_size=args.batch_size,
-                                sampler=RandomSampler(source_train_dataset))
+        # source_train_loader = DataLoader(source_train_dataset,
+        #                         batch_size=args.batch_size,
+        #                         sampler=RandomSampler(source_train_dataset))
         target_train_loader = DataLoader(target_train_dataset,
                                 batch_size=args.batch_size,
                                 sampler=RandomSampler(target_train_dataset))
                                 
-        source_val_loader = DataLoader(source_val_dataset,
-                                batch_size=args.batch_size,
-                                sampler=SequentialSampler(source_val_dataset))
+        # source_val_loader = DataLoader(source_val_dataset,
+        #                         batch_size=args.batch_size,
+        #                         sampler=SequentialSampler(source_val_dataset))
         target_val_loader = DataLoader(target_val_dataset,
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(target_val_dataset))
@@ -369,31 +369,30 @@ def main():
 
         # print(best_scores)
 
-        alphas = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        betas = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        alpha = 0.4
+        beta = 0.3
 
-        for a in alphas:
-            for b in betas:
-                alpha = a
-                beta = b
-                args.save_dir = util.get_save_dir('save/baseline-01', '{}and{}'.format(alpha,beta))
-                args.num_epochs = 50
+        args.lr = 3e-07
+        
+        args.save_dir = util.get_save_dir('save/baseline-01', '{}and{}'.format(alpha,beta))
+        args.num_epochs = 50
 
-                trainer = Trainer(args, log)
+        trainer = Trainer(args, log)
 
-                checkpoint_path = os.path.join('save/03.final/tinybert-ind-50/baseline-01', 'checkpoint')
-                model_t = MyModel.from_pretrained(checkpoint_path)
-                model_s = MyModel.from_pretrained(checkpoint_path)
+        #checkpoint_path = os.path.join('save/03.final/tinybert-ind-50/baseline-01', 'checkpoint')
+        checkpoint_path = os.path.join('save/new/0.4and0.3-01', 'checkpoint')
+        model_t = MyModel.from_pretrained(checkpoint_path)
+        model_s = MyModel.from_pretrained(checkpoint_path)
 
-                for p in model_t.qa_outputs.parameters():
-                    p.requires_grad = False
+        for p in model_t.qa_outputs.parameters():
+            p.requires_grad = False
 
-                for p in model_s.parameters():
-                    p.requires_grad = False
+        for p in model_s.parameters():
+            p.requires_grad = False
 
-                best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict, alpha, beta)
+        best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict, alpha, beta)
 
-                print('Alpha:{}, Beta:{}, Score:{}'.format(alpha, beta, best_scores))
+        print('Alpha:{}, Beta:{}, Score:{}'.format(alpha, beta, best_scores))
 
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
