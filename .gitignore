@@ -5,6 +5,7 @@
 
 save/
 datasets/
+src/
 
 __pycache__/
 *.py[cod]
