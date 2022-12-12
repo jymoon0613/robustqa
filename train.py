@@ -337,6 +337,7 @@ def main():
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
         args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
+
         log = util.get_logger(args.save_dir, 'log_train')
         log.info(f'Args: {json.dumps(vars(args), indent=4, sort_keys=True)}')
         
@@ -368,12 +369,10 @@ def main():
         best_scores = trainer.train(model, source_train_loader, target_val_loader, target_val_dict)
 
         print(best_scores)
-        
-        args.save_dir = util.get_save_dir('save/baseline-01', '{}/baseline-01'.format('onlyent'))
 
         trainer = Trainer(args, log)
 
-        checkpoint_path = os.path.join('save/00.aa/01.SourceOnly/TinyBERT/baseline-01', 'checkpoint')
+        checkpoint_path = os.path.join(args.save_dir)
         model_t = AutoModelForQuestionAnswering.from_pretrained(checkpoint_path)
         model_s = AutoModelForQuestionAnswering.from_pretrained(checkpoint_path)
 
