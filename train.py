@@ -330,7 +330,7 @@ def main():
     args = get_train_test_args()
 
     util.set_seed(args.seed)
-    model = MyModel.from_pretrained("deepset/tinybert-6l-768d-squad2")
+    model = AutoModelForQuestionAnswering.from_pretrained("deepset/tinybert-6l-768d-squad2")
     tokenizer = AutoTokenizer.from_pretrained("deepset/tinybert-6l-768d-squad2")
 
     if args.do_train:
@@ -378,8 +378,8 @@ def main():
         trainer = Trainer(args, log)
 
         checkpoint_path = os.path.join('save/00.aa/01.SourceOnly/TinyBERT/baseline-01', 'checkpoint')
-        model_t = MyModel.from_pretrained(checkpoint_path)
-        model_s = MyModel.from_pretrained(checkpoint_path)
+        model_t = AutoModelForQuestionAnswering.from_pretrained(checkpoint_path)
+        model_s = AutoModelForQuestionAnswering.from_pretrained(checkpoint_path)
 
         for p in model_t.qa_outputs.parameters():
             p.requires_grad = False
