@@ -344,36 +344,32 @@ def main():
         trainer = Trainer(args, log)
 
         log.info("Preparing Training Data...")
-        # source_train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train')
+        source_train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train')
         target_train_dataset, _ = get_dataset(args, 'race,relation_extraction,duorc', 'datasets/oodomain_train', tokenizer, 'train')
 
         log.info("Preparing Validation Data...")
-        # source_val_dataset, source_val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
+        source_val_dataset, source_val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         target_val_dataset, target_val_dict = get_dataset(args, 'race,relation_extraction,duorc', 'datasets/oodomain_val', tokenizer, 'val')
 
-        # source_train_loader = DataLoader(source_train_dataset,
-        #                         batch_size=args.batch_size,
-        #                         sampler=RandomSampler(source_train_dataset))
+        source_train_loader = DataLoader(source_train_dataset,
+                                batch_size=args.batch_size,
+                                sampler=RandomSampler(source_train_dataset))
         target_train_loader = DataLoader(target_train_dataset,
                                 batch_size=args.batch_size,
                                 sampler=RandomSampler(target_train_dataset))
                                 
-        # source_val_loader = DataLoader(source_val_dataset,
-        #                         batch_size=args.batch_size,
-        #                         sampler=SequentialSampler(source_val_dataset))
+        source_val_loader = DataLoader(source_val_dataset,
+                                batch_size=args.batch_size,
+                                sampler=SequentialSampler(source_val_dataset))
         target_val_loader = DataLoader(target_val_dataset,
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(target_val_dataset))
 
-        # best_scores = trainer.train(model, source_train_loader, target_val_loader, target_val_dict)
+        best_scores = trainer.train(model, source_train_loader, target_val_loader, target_val_dict)
 
-        # print(best_scores)
-
-        alpha = 0.4
-        beta = 0.3
+        print(best_scores)
         
         args.save_dir = util.get_save_dir('save/baseline-01', '{}/baseline-01'.format('onlyent'))
-        args.num_epochs = 50
 
         trainer = Trainer(args, log)
 
@@ -387,9 +383,9 @@ def main():
         for p in model_s.parameters():
             p.requires_grad = False
 
-        best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict, alpha, beta)
+        best_scores = trainer.train_target(model_t, model_s, target_train_loader, target_val_loader, target_val_dict, args.alpha, args.beta)
 
-        print('Alpha:{}, Beta:{}, Score:{}'.format(alpha, beta, best_scores))
+        print(best_scores)
 
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
