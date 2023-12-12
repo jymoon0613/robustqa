@@ -52,7 +52,7 @@
     <em><font size=2>Our Method</font></em>
 </p>
 
-## Result
+## Results
 
 |    method   | backbone | F1-IND | EM-IND | F1-OOD | EM-OOD |
 |:-----------:|:--------:|:------:|:------:|:------:|:------:|
@@ -63,3 +63,7 @@
 
 - Our method records the highest performance on out-of-domain dataset
 - However, there is a problem that the performance on in-domain dataset is significantly traded-off
+
+## References
+- [CS224N default final project (2022 RobustQA track)](https://github.com/michiyasunaga/robustqa)
+- [tim-learn/shot](https://github.com/tim-learn/SHOT)https://github.com/tim-learn/SHOT)
