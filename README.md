@@ -1,25 +1,62 @@
-# AIX7023-01 Final Project: Robust Question Answering
-
+# Robust QA
+**AIX7023-01 Final Project**
 - Download datasets from [here](https://drive.google.com/file/d/1Fv2d30hY-2niU7t61ktnMsi_HUXS6-Qx/view?usp=sharing)
 - Reference: [CS224N default final project (2022 RobustQA track)](https://github.com/michiyasunaga/robustqa)
 
-# About Project
+## Introduction
+### Robust Question Answering
+- Question Answering (QA) aims to extract the correct answer span given the context and question
+- Pre-trained transformers showed good performance in QA, but this requires a large amount of labeled data
+- The model performs well in domains in which it is trained with large amounts of labeled data (**in-domain, IND**)
+- But the model performs poorly in domains that share some similarities but are different (**out-of-domain, OOD**)
+- The model generalizes poorly (**poor robustness**) 
+
+|  method  | backbone | F1-IND | EM-IND | F1-OOD | EM-OOD |
+|:--------:|:--------:|:------:|:------:|:------:|:------:|
+| IND-only | TinyBERT |  72.15 |  56.45 |  49.68 |  35.08 |
+
+### Causes of Poor Robustness
+#### (1) Domain Shift
+- Domain shift refers to the difference in distribution between the model's training data (**source**) and test data (**target**)
+- Weak at generalizing learned knowledge
+#### (2) Insufficient Labeled Data
+- There are very few labeled samples in the out-of-domain training set (150,000 >>> 381)
+- It is difficult to improve only with supervised tuning for out-of-domain
+
+### Domain Adaptation
+- In this project, we improve the robustness of QA model by using **domain adaptation** method
+- Learn **domain-invariant feature representations**
+- Learning a model that can be applied to both source and target domains (**improved generalization**)
+
 <p align="center">
     <img alt='fig1' src="./src/1.PNG?raw=true"></br>
-    <img alt='fig2' src="./src/2.PNG?raw=true"></br>
-    <img alt='fig3' src="./src/3.PNG?raw=true"></br>
-    <img alt='fig4' src="./src/4.PNG?raw=true"></br>
-    <img alt='fig5' src="./src/5.PNG?raw=true"></br>
-    <img alt='fig6' src="./src/6.PNG?raw=true"></br>
-    <img alt='fig7' src="./src/7.PNG?raw=true"></br>
-    <img alt='fig8' src="./src/8.PNG?raw=true"></br>
-    <img alt='fig9' src="./src/9.PNG?raw=true"></br>
-    <img alt='fig10' src="./src/10.PNG?raw=true"></br>
-    <img alt='fig11' src="./src/11.PNG?raw=true"></br>
-    <img alt='fig12' src="./src/12.PNG?raw=true"></br>
-    <img alt='fig13' src="./src/13.PNG?raw=true"></br>
-    <img alt='fig14' src="./src/14.PNG?raw=true"></br>
-    <img alt='fig15' src="./src/15.PNG?raw=true"></br>
-    <img alt='fig16' src="./src/16.PNG?raw=true"></br>
-    <img alt='fig17' src="./src/17.PNG?raw=true"></br>
 </p>
+
+## Method
+- *“Do We Really Need to Access the Source Data? Source Hypothesis Transfer for Unsupervised Domain Adaptation”, ICML 2020*
+
+<p align="center">
+    <img alt='fig2' src="./src/1.PNG?raw=true"></br>
+</p>
+
+- There are differences between SHOT's scenario and ours
+> - Unsupervised vs. supervised
+> - Image classification (CV) vs. question answering (NLP)
+- Therefore, there are some modifications to the implementation
+- Inspired by SHOT, we propose a domain adaptation method for robust question answering
+
+<p align="center">
+    <img alt='fig3' src="./src/1.PNG?raw=true"></br>
+</p>
+
+## Result
+
+|    method   | backbone | F1-IND | EM-IND | F1-OOD | EM-OOD |
+|:-----------:|:--------:|:------:|:------:|:------:|:------:|
+| IND-only    | TinyBERT |  72.15 |  56.45 |  49.68 |  35.08 |
+| OOD-only    | TinyBERT |  53.42 |  37.40 |  43.24 |  30.10 |
+| Fine-tuning | TinyBERT |  70.40 |  54.40 |  50.66 |  35.34 |
+| Ours        | TinyBERT |  65.87 |  49.16 |  52.20 |  36.65 |
+
+- Our method records the highest performance on out-of-domain dataset
+- However, there is a problem that the performance on in-domain dataset is significantly traded-off
