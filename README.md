@@ -29,14 +29,16 @@
 - Learning a model that can be applied to both source and target domains (**improved generalization**)
 
 <p align="center">
-    <img alt='fig1' src="./src/1.PNG?raw=true"></br>
+    <img width="500" alt='fig1' src="./src/fig1.png?raw=true"></br>
+    <em><font size=2>Domain Adaptation</font></em>
 </p>
 
 ## Method
 - *“Do We Really Need to Access the Source Data? Source Hypothesis Transfer for Unsupervised Domain Adaptation”, ICML 2020*
 
 <p align="center">
-    <img alt='fig2' src="./src/1.PNG?raw=true"></br>
+    <img width="500" alt='fig2' src="./src/fig2.png?raw=true"></br>
+    <em><font size=2>SHOT (ICML'20)</font></em>
 </p>
 
 - There are differences between SHOT's scenario and ours
@@ -46,7 +48,8 @@
 - Inspired by SHOT, we propose a domain adaptation method for robust question answering
 
 <p align="center">
-    <img alt='fig3' src="./src/1.PNG?raw=true"></br>
+    <img width="500" alt='fig3' src="./src/fig3.png?raw=true"></br>
+    <em><font size=2>Our Method</font></em>
 </p>
 
 ## Result
