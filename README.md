@@ -11,10 +11,6 @@
 - But the model performs poorly in domains that share some similarities but are different (**out-of-domain, OOD**)
 - The model generalizes poorly (**poor robustness**) 
 
-|  method  | backbone | F1-IND | EM-IND | F1-OOD | EM-OOD |
-|:--------:|:--------:|:------:|:------:|:------:|:------:|
-| IND-only | TinyBERT |  72.15 |  56.45 |  49.68 |  35.08 |
-
 ### Causes of Poor Robustness
 #### (1) Domain Shift
 - Domain shift refers to the difference in distribution between the model's training data (**source**) and test data (**target**)
