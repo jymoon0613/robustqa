@@ -65,5 +65,5 @@
 - However, there is a problem that the performance on in-domain dataset is significantly traded-off
 
 ## References
-- [CS224N default final project (2022 RobustQA track)](https://github.com/michiyasunaga/robustqa)
-- [tim-learn/shot](https://github.com/tim-learn/SHOT)https://github.com/tim-learn/SHOT)
+- [michiyasunaga/robustqa](https://github.com/michiyasunaga/robustqa)
+- [tim-learn/shot](https://github.com/tim-learn/SHOT)
