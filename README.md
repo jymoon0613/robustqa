@@ -3,7 +3,7 @@
 - Download datasets from [here](https://drive.google.com/file/d/1Fv2d30hY-2niU7t61ktnMsi_HUXS6-Qx/view?usp=sharing)
 - Reference: [CS224N default final project (2022 RobustQA track)](https://github.com/michiyasunaga/robustqa)
 
-## Introduction
+## About Project
 ### Robust Question Answering
 - Question Answering (QA) aims to extract the correct answer span given the context and question
 - Pre-trained transformers showed good performance in QA, but this requires a large amount of labeled data
