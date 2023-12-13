@@ -48,7 +48,7 @@
 - Inspired by SHOT, we propose a domain adaptation method for robust question answering
 
 <p align="center">
-    <img width="500" alt='fig3' src="./src/fig3.png?raw=true"></br>
+    <img width="700" alt='fig3' src="./src/fig3.png?raw=true"></br>
     <em><font size=2>Our Method</font></em>
 </p>
 
