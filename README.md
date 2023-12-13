@@ -20,7 +20,7 @@
 - Domain shift refers to the difference in distribution between the model's training data (**source**) and test data (**target**)
 - Weak at generalizing learned knowledge
 #### (2) Insufficient Labeled Data
-- There are very few labeled samples in the out-of-domain training set (150,000 >>> 381)
+- There are very few labeled samples in the out-of-domain training set (150,000 > 381)
 - It is difficult to improve only with supervised tuning for out-of-domain
 
 ### Domain Adaptation
