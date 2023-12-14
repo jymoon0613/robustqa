@@ -9,7 +9,7 @@
 - Pre-trained transformers showed good performance in QA, but this requires a large amount of labeled data
 - The model performs well in domains in which it is trained with large amounts of labeled data (**in-domain, IND**)
 - But the model performs poorly in domains that share some similarities but are different (**out-of-domain, OOD**)
-- The model generalizes poorly (**poor robustness**) 
+- The model generalizes poorly (**poor robustness**)
 
 ### Causes of Poor Robustness
 #### (1) Domain Shift
@@ -59,6 +59,22 @@
 
 - Our method records the highest performance on out-of-domain dataset
 - However, there is a problem that the performance on in-domain dataset is significantly traded-off
+
+## Usage
+- Setup environment with:
+```bash
+conda env create -f environment.yml
+```
+
+- An example command line for the training:
+```bash
+python train.py --do-train --run-name {RUN_NAME}
+```
+
+- An example command line for the evaluation:
+```bash
+python train.py --do-eval --sub-file {SUBMISSION_FILE_NAME.csv}
+```
 
 ## References
 - [michiyasunaga/robustqa](https://github.com/michiyasunaga/robustqa)
