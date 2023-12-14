@@ -73,7 +73,7 @@ python train.py --do-train --run-name {RUN_NAME}
 
 - An example command line for the evaluation:
 ```bash
-python train.py --do-eval --sub-file {SUBMISSION_FILE_NAME.csv}
+python train.py --do-eval --save_dir {PATH/TO/MODEL_CHECKPOINT}
 ```
 
 ## References
